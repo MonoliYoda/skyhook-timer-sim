@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LineChart, AreaChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, BarChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Bar } from 'recharts';
 
 const SkyhookSimulation = () => {
   const [numSkyhooks, setNumSkyhooks] = useState(20);
@@ -112,14 +112,14 @@ const SkyhookSimulation = () => {
 
       <div className="mb-4" style={{ width: '100%', height: 400 }}>
         <ResponsiveContainer>
-          <LineChart data={simulationData}>
-            <CartesianGrid strokeDasharray="1"  />
+          <BarChart data={simulationData}>
+            <CartesianGrid strokeDasharray="1" />
             <XAxis dataKey="hour" />
             <YAxis />
             <Tooltip contentStyle={{ backgroundColor: "rgb(30 41 59)" }} labelStyle={{ color: "rgb(226 232 240)", }} />
             <Legend />
-            <Line type="monotone" dataKey="count" stroke="#b4b1e7" />
-          </LineChart>
+            <Bar dataKey="count" fill="#8884d8" />
+          </BarChart>
         </ResponsiveContainer>
       </div>
     </div>
