@@ -1,13 +1,11 @@
 import SkyhookSimulation from './components/SkyhookSimulation';
 import './App.css';
-import { Theme } from '@radix-ui/themes';
 
 function App() {
   return (
-    <div className="App">
-      <Theme>
+    <div className="App bg-slate-800 h-screen">
         <SkyhookSimulation />
-      </Theme>
+
     </div>
   );
 }
