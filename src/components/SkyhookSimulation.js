@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, BarChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Bar } from 'recharts';
 
 const SkyhookSimulation = () => {
+  const stdDev = 3;  // 3 hours standard deviation
+  const vulnerabilityDuration = 1;  // 1 hour
+  const cycleDuration = 72;  // 3 days in hours
+
   const [numSkyhooks, setNumSkyhooks] = useState(20);
   const [centerTime, setCenterTime] = useState(18);
   const [simulationData, setSimulationData] = useState([]);
@@ -21,7 +25,7 @@ const SkyhookSimulation = () => {
   };
 
   const runSimulation = () => {
-    const times = generateTimes(numSkyhooks, centerTime, 3);
+    const times = generateTimes(numSkyhooks, centerTime, stdDev);
     // const sortedTimes = [...times].sort((a, b) => a - b);
 
     // Prepare data for the chart
