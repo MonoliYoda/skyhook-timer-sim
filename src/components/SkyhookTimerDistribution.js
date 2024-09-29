@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line } from "recharts";
 import { create, all } from 'mathjs'
+
+import { loadSystems, loadConnections, simulate, calculateProbability } from './helper/universe';
+import systemsData from './data/systems.json';
+import connectionsData from './data/connections.json';
+
 const math = create(all)
 
 const SkyhookTimerDistribution = () => {
@@ -13,6 +18,15 @@ const SkyhookTimerDistribution = () => {
   const [cycleRandomness, setCycleRandomness] = useState(0);
   const [centerSpread, setCenterSpread] = useState(0);
   const [simulationData, setSimulationData] = useState([]);
+
+  const [systems, setSystems] = useState(new Set());
+  const [connections, setConnections] = useState(new Map());
+
+  const maxJumps = 5;
+  const numSimulations = 10000;
+
+  const [avgJumps, setAvgJumps] = useState(-1);
+  const [probability, setProbability] = useState(-1);
 
   const generateTime = (center, stdDev) => {
     let time = center + stdDev * Math.sqrt(-2 * Math.log(Math.random())) * Math.cos(2 * Math.PI * Math.random());
@@ -127,8 +141,35 @@ const SkyhookTimerDistribution = () => {
     // runSimulation(9, 0.5, 12, 0);
   };
 
+  const handleChartClicked = (e) => {
+    if (e.activePayload === null || e.activePayload.length === 0) {
+      return;
+    }
+    if (e.activePayload[0].payload.count === 0) {
+      // No vulnerable skyhooks, no need to run simulation
+      setAvgJumps(-1);
+      setProbability(0);
+      return;
+    }
+    if (systems.size === 0 || connections.size === 0) {
+      console.error("Systems and connections not loaded");
+      return;
+    }
+    const numVulnSkyhooks = e.activePayload[0].payload.count;
+    const vulnerableSystems = new Set(Array.from(systems).sort(() => 0.5 - Math.random()).slice(0, numVulnSkyhooks));
+
+    const simResults = simulate(systems, connections, vulnerableSystems, numSimulations);
+    const avg = simResults.reduce((a, b) => a + b, 0) / simResults.length;
+    setAvgJumps(avg);
+    const prob = calculateProbability(simResults, maxJumps);
+    setProbability(prob);
+  };
+
   useEffect(() => {
     runSimulation();
+    setSystems(loadSystems(systemsData));
+    setConnections(loadConnections(connectionsData));
+
   }, []);
 
   return (
@@ -200,26 +241,38 @@ const SkyhookTimerDistribution = () => {
             <span className="block">{centerSpread / 100}</span>
           </div>
         </div>
-        </div>
-        <button
-          onClick={handleRunSimulation}
-          className="mb-8 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Run Simulation
-        </button>
-        <div className="mb-4" style={{ width: '100%', height: 400 }}>
-          <ResponsiveContainer>
-            <LineChart data={simulationData}>
-              <CartesianGrid strokeDasharray="1" />
-              <XAxis dataKey="hour" />
-              <YAxis domain={[0, Math.floor(numSkyhooks / 6)]} />
-              <Tooltip contentStyle={{ backgroundColor: "rgb(30 41 59)" }} labelStyle={{ color: "rgb(226 232 240)", }} />
-              <Legend />
-              <Line type="monotone" dataKey="count" stroke="#b4b1e7" />
-            </LineChart>
-          </ResponsiveContainer>
+      </div>
+      <button
+        onClick={handleRunSimulation}
+        className=" px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+      >
+        Run Simulation
+      </button>
+      <div className="flex w-full my-8">
+        <div className='mx-auto'>
+          <p className="text-xl font-semibold mb-4">Click on the chart to calculate:</p>
+          <p>For a randomly selected Nullsec system</p>
+          <div>
+            <p>Average number of jumps to reach a vulnerable Skyhook: {avgJumps.toFixed(2)}</p>
+          </div>
+          <div>
+            <p>Probability of reaching a vulnerable Skyhook within {maxJumps} jumps: {(probability * 100).toFixed(2)}%</p>
+          </div>
         </div>
       </div>
+      <div className="mb-4" style={{ width: '100%', height: 400 }}>
+        <ResponsiveContainer>
+          <LineChart data={simulationData} onClick={handleChartClicked}>
+            <CartesianGrid strokeDasharray="1" />
+            <XAxis dataKey="hour" />
+            <YAxis domain={[0, Math.floor(numSkyhooks / 6)]} />
+            <Tooltip contentStyle={{ backgroundColor: "rgb(30 41 59)" }} labelStyle={{ color: "rgb(226 232 240)", }} />
+            <Legend />
+            <Line type="monotone" dataKey="count" stroke="#b4b1e7" />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
 
   );
 }
